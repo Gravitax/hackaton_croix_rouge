@@ -5,10 +5,25 @@ const	__token = "JWT eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MzQ5OTgyN2
 
 const	app = () => {
 
+	// GET
 	fetch("https://api.prosoliguide.fr/place/0?lang=fr", {
 		headers : {
 			"Authorization" : __token
 		}
+	})
+		.then((data) => data.text())
+		.then((data_text) => console.log(data_text));
+	
+	// POST METHOD
+	fetch("https://api.prosoliguide.fr/new-search/", {
+		headers : {
+			"Authorization" : __token,
+			"User-Agent"	: window.navigator.userAgent,
+			"Content-Type"	: "application/json"
+		},
+		method	: 'POST', // *GET, POST, PUT, DELETE, etc.
+		mode	: 'cors', // no-cors, *cors, same-origin
+		cache	: 'no-cache', // *default, no-cache, reload, force-cache, only-
 	})
 		.then((data) => data.text())
 		.then((data_text) => console.log(data_text));
