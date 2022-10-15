@@ -20,21 +20,23 @@ const	app = () => {
 	// 	.then((data_text) => console.log(data_text));
 	
 	// POST METHOD
+	const	body_data = {
+		"location"	: {
+			"geoType"	: "ville",
+			"geoValue"	: "paris"
+		}
+	};
+
+
+
 	fetch("https://api.prosoliguide.fr/new-search/", {
 		headers : {
 			"Authorization" : __token,
+			"Content-Type"	: "application/json",
 			"User-Agent"	: window.navigator.userAgent,
-			"Content-Type"	: "application/json"
 		},
-		method	: "POST", // *GET, POST, PUT, DELETE, etc.
-		mode	: "cors", // no-cors, *cors, same-origin
-		cache	: "no-cache", // *default, no-cache, reload, force-cache, only-,
-		body	: {
-			"location"	: {
-				"geoType"	: "ville",
-				"geoValue"	: "paris"
-			}
-		}
+		method	: "POST",
+		body	: JSON.stringify(body_data),
 	})
 		.then((data) => data.text())
 		.then((data_text) => console.log(data_text));
