@@ -58,9 +58,13 @@ const	parse_soliguide = (flux) => {
 			"site"			: asso.entity.website,
 			"description"	: asso.description,
 			"name"			: asso.name,
+			"name_long"		: asso.entity.name,
 			"update"		: refaktor_update_value(asso.updatedAt),
 		});
 		window.soliguide_asso.push(asso_data);
+
+
+
 	}
 
 	console.log(window.soliguide_asso.length);
