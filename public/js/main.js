@@ -20,6 +20,7 @@ const	create_new_template = (data) => {
 	);
 };
 
+
 // =======================================================================
 // RNA PART
 
@@ -38,7 +39,7 @@ const	format_rna = async (asso_data) => {
 		.catch((error) => console.log(`get rna error : ${error}`));
 
 	// il faut formater data afin quil remplisse le template
-	
+
 	return (data);
 };
 
@@ -183,10 +184,6 @@ mab.init();
 mab(document).ready(() => {
 
 	console.log("phase : HTML is ready");
-
-	// 1 - on recupere toutes les asso soliguide celon un template de donnees propre
-	// 2 - pareil avec rna
-	// 3 - on compare les deux rendu
 
 	console.log("phase : start app");
 	app();
