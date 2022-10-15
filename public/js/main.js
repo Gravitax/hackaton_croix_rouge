@@ -26,20 +26,29 @@ const	create_new_template = (data) => {
 /*
 	on formate les info du flux rna au format de notre template
 */
+
 const	format_rna = async (asso_data) => {
-	let	data = {};
+
+	let	toto = {};
 
 	// GET
-	await fetch(`https://entreprise.data.gouv.fr/api/rna/v1/full_text/${asso_data.name}`, {
-		mode	: "no-cors"
+	console.log(asso_data)
+	await fetch(`https://entreprise.data.gouv.fr/api/rna/v1/full_text/<${asso_data.name}>`, {
+		// await fetch(`https://entreprise.data.gouv.fr/api/rna/v1/full_text/${asso_data.name}`, {
 	})
-		.then((data) => data.text())
-		.then((data_text) => data = data_text)
+		.then((data) => data.json())
+		.then((data_text) => {
+			toto = data_text
+			console.log(data_text)
+		})
 		.catch((error) => console.log(`get rna error : ${error}`));
+	 
+		// .then((data) => data.json())
+		// .then((data_text) => parse_soliguide(data_text))
+		// .then((data) => data.text())
+		// .then((data_text) => console.log(data_text));
 
-	// il faut formater data afin quil remplisse le template
-	
-	return (data);
+	return (toto)
 };
 
 /*
@@ -49,7 +58,7 @@ const	get_rna_asso = async () => {
 	let	data = {};
 
 	// on loop sur toutes les asso soliguide et on recupere leurs data rna liees
-	for (let i = 0; i < window.soliguide_asso.length; i++) {
+	for (let i = 0; i < 1; i++) {
 		// on await format rna afin de rendre synchrone la variable data
 		data = await format_rna(window.soliguide_asso[i]);
 		// on cree et push le template
@@ -169,8 +178,8 @@ const	app = async () => {
 	console.log(window.soliguide_asso.length);
 	// on recupere les asso rna templatees de facon propre
 	console.log("phase : get RNA asso");
-	// await get_rna_asso();
-	// console.log(window.rna_asso.length);
+	await get_rna_asso();
+	console.log(window.rna_asso.length);
 
 	console.log("phase : comparaison");
 	// compare_soliguide_rna();
