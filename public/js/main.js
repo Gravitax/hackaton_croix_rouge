@@ -1,44 +1,6 @@
 import mab from "../mab_framework/mab.js";
 
 
-const	__token = "JWT eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MzQ5OTgyN2FmZGI3NzgzOWEyNmY2MDMiLCJpYXQiOjE2NjU3Njc5MTYsImV4cCI6MTY5NzMwMzkxNn0.UMjmas1ZyJlaXSS8S90vqdr7j3x_suHJMqM4EUD4_Y4";
-
-// =======================================================================
-
-/*
-	on formate les info du flux rna au format de notre template
-*/
-const	format_rna_data = async (asso_data) => {
-
-	let	data = {};
-
-	// GET
-	await fetch(`https://entreprise.data.gouv.fr/api/rna/v1/full_text/${asso_data.name}`)
-		.then((data) => data.json())
-		.then((data_text) => data = data_text);
-
-	return (data);
-};
-
-/*
-	on query lapi rna afin de creer un nouveau template
-*/
-const	get_rna_template = async (asso_data) => {
-
-	// on recupere les info de lasso sur le flux rna
-	data = await format_rna_data(asso_data);
-	// on cree le template
-	return (create_new_template({
-		"cp"			: data.cp,
-		"ville"			: data.ville,
-		"addr"			: data.addr,
-		"site"			: data.site,
-		"description"	: data.description,
-		"name"			: data.name,
-		"update"		: data.update,
-	}))
-};
-
 // =======================================================================
 
 /*
@@ -58,6 +20,53 @@ const	create_new_template = (data) => {
 	);
 };
 
+// =======================================================================
+// RNA PART
+
+/*
+	on formate les info du flux rna au format de notre template
+*/
+const	format_rna = async (asso_data) => {
+	let	data = {};
+
+	// GET
+	await fetch(`https://entreprise.data.gouv.fr/api/rna/v1/full_text/${asso_data.name}`, {
+		mode	: "no-cors"
+	})
+		.then((data) => data.text())
+		.then((data_text) => data = data_text);
+	return (data);
+};
+
+/*
+	on query lapi rna afin de creer un nouveau template
+*/
+const	get_rna_asso = async () => {
+	let	data = {};
+
+	for (let i = 0; i < window.soliguide_asso.length; i++) {
+		// on recupere les info de lasso sur le flux rna
+		data = await format_rna(window.soliguide_asso[i]);
+		// on cree et push le template
+		window.rna_asso.push(create_new_template({
+			"cp"			: data.cp,
+			"ville"			: data.ville,
+			"addr"			: data.addr,
+			"site"			: data.site,
+			"description"	: data.description,
+			"name"			: data.name,
+			"update"		: data.update,
+		}));
+	}
+};
+
+// =======================================================================
+
+// SOLIGUIDE PART
+
+// access token to soliguide api
+const	__token = "JWT eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MzQ5OTgyN2FmZGI3NzgzOWEyNmY2MDMiLCJpYXQiOjE2NjU3Njc5MTYsImV4cCI6MTY5NzMwMzkxNn0.UMjmas1ZyJlaXSS8S90vqdr7j3x_suHJMqM4EUD4_Y4";
+
 /*
 	on formate la date de facon plus lisible
 */
@@ -70,12 +79,8 @@ const	refaktor_update_value = (value) => {
 
 	splitv = splitv[1].split('.');
 	new_date = `${new_date} ${splitv[0]}`;
-
-	console.log(new_date);
 	return (new_date);
 };
-
-// =======================================================================
 
 const	parse_soliguide = (flux) => {
 
@@ -84,9 +89,7 @@ const	parse_soliguide = (flux) => {
 
 	flux = flux.places;
 
-	console.log(flux);
-
-	let	asso_data = {}, asso, rna_data;
+	let	asso_data = {}, asso;
 
 	// on loop sur le flux afin de remplir le template qui servira de comparatif avec les infos de lapi detat
 	for (let i = 0; i < flux.length; i++) {
@@ -102,20 +105,13 @@ const	parse_soliguide = (flux) => {
 			"update"		: refaktor_update_value(asso.updatedAt),
 		});
 		window.soliguide_asso.push(asso_data);
-
-		// on va query lapi rna afin de creer un template quon va comparer au template de lasso cree via lapi soliguide
-		rna_data = get_rna_template(asso_data);
 	}
-
-	console.log(window.soliguide_asso.length);
-
 };
 
 /*
 	on recupere toutes les assoc de soliguide et on cree un nouveau template json avec des infos epurees
 */
-const	get_all_soliguide_asso = () => {
-	// POST
+const	get_soliguide_asso = async () => {
 	const	body_data = {
 		"options"	: {
 			"limit"	: Infinity
@@ -126,7 +122,7 @@ const	get_all_soliguide_asso = () => {
 		}
 	};
 
-	fetch("https://api.prosoliguide.fr/new-search/", {
+	await fetch("https://api.prosoliguide.fr/new-search/", {
 		headers : {
 			"Authorization" : __token,
 			"Content-Type"	: "application/json",
@@ -142,25 +138,37 @@ const	get_all_soliguide_asso = () => {
 
 // =======================================================================
 
-const	app = () => {
+/*
+	une fois les templates soliguide et rna crees il faut les comparer
+*/
+const	compare_soliguide_rna = () => {
+	let	soliguide, rna;
 
-	// PRO ===============================================================
+	for (let i = 0; i < window.soliguide_asso.length; i++) {
+		soliguide = window.soliguide_asso[i];
+		rna = window.rna_asso[i];
 
-	// GET
-	// fetch("https://api.prosoliguide.fr/place/0?lang=fr", {
-	// 	headers : {
-	// 		"Authorization" : __token
-	// 	}
-	// })
-	// 	.then((data) => data.text())
-	// 	.then((data_text) => console.log(data_text));
-	
-	// ===================================================================
+		// console.log(soliguide, rna);
+	}
+};
 
-	// creating a global array
+// =======================================================================
+
+const	app = async () => {
+	// creating global arrays
 	window.soliguide_asso = [];
+	window.rna_asso = [];
+	// on recupere les asso soliguide templatee de facon propre
+	console.log("phase : get SOLIGUIDE asso");
+	await get_soliguide_asso();
+	console.log(window.soliguide_asso.length);
+	// on recupere les asso rna templatee de facon propre
+	console.log("phase : get RNA asso");
+	// await get_rna_asso();
+	// console.log(window.rna_asso.length);
 
-	get_all_soliguide_asso();
+	console.log("phase : comparaison");
+	compare_soliguide_rna();
 };
 
 // =======================================================================
@@ -169,10 +177,13 @@ mab.init();
 
 mab(document).ready(() => {
 
-	// 1 - on recupere toutes les asso
-	// 2 - on list tout les titres + siret + nom / assoc
-	// 3 - on check sur lapp gvt
+	console.log("phase : HTML is ready");
 
+	// 1 - on recupere toutes les asso soliguide celon un template de donnees propre
+	// 2 - pareil avec rna
+	// 3 - on compare les deux rendu
+
+	console.log("phase : start app");
 	app();
 
 });
