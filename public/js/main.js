@@ -3,6 +3,44 @@ import mab from "../mab_framework/mab.js";
 
 const	__token = "JWT eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2MzQ5OTgyN2FmZGI3NzgzOWEyNmY2MDMiLCJpYXQiOjE2NjU3Njc5MTYsImV4cCI6MTY5NzMwMzkxNn0.UMjmas1ZyJlaXSS8S90vqdr7j3x_suHJMqM4EUD4_Y4";
 
+// =======================================================================
+
+/*
+	on formate les info du flux rna au format de notre template
+*/
+const	format_rna_data = async (asso_data) => {
+
+	let	data = {};
+
+	// GET
+	await fetch(`https://entreprise.data.gouv.fr/api/rna/v1/full_text/${asso_data.name}`)
+		.then((data) => data.json())
+		.then((data_text) => data = data_text);
+
+	return (data);
+};
+
+/*
+	on query lapi rna afin de creer un nouveau template
+*/
+const	get_rna_template = async (asso_data) => {
+
+	// on recupere les info de lasso sur le flux rna
+	data = await format_rna_data(asso_data);
+	// on cree le template
+	return (create_new_template({
+		"cp"			: data.cp,
+		"ville"			: data.ville,
+		"addr"			: data.addr,
+		"site"			: data.site,
+		"description"	: data.description,
+		"name"			: data.name,
+		"update"		: data.update,
+	}))
+};
+
+// =======================================================================
+
 /*
 	on associe les donnees recuperees de lapi a un template commun
 */
@@ -37,6 +75,8 @@ const	refaktor_update_value = (value) => {
 	return (new_date);
 };
 
+// =======================================================================
+
 const	parse_soliguide = (flux) => {
 
 	if (!flux || !flux.places)
@@ -46,7 +86,7 @@ const	parse_soliguide = (flux) => {
 
 	console.log(flux);
 
-	let	asso_data = {}, asso;
+	let	asso_data = {}, asso, rna_data;
 
 	// on loop sur le flux afin de remplir le template qui servira de comparatif avec les infos de lapi detat
 	for (let i = 0; i < flux.length; i++) {
@@ -63,8 +103,8 @@ const	parse_soliguide = (flux) => {
 		});
 		window.soliguide_asso.push(asso_data);
 
-
-
+		// on va query lapi rna afin de creer un template quon va comparer au template de lasso cree via lapi soliguide
+		rna_data = get_rna_template(asso_data);
 	}
 
 	console.log(window.soliguide_asso.length);
@@ -100,16 +140,9 @@ const	get_all_soliguide_asso = () => {
 		.catch((error) => console.log(`error : ${error}`));
 }
 
+// =======================================================================
+
 const	app = () => {
-
-	// RNA ===============================================================
-
-	// GET
-	// fetch("https://entreprise.data.gouv.fr/api/rna/v1/full_text/Croix+rouge")
-	// 	.then((data) => data.text())
-	// 	.then((data_text) => console.log(data_text));
-
-	// ===================================================================
 
 	// PRO ===============================================================
 
@@ -129,6 +162,8 @@ const	app = () => {
 
 	get_all_soliguide_asso();
 };
+
+// =======================================================================
 
 mab.init();
 
