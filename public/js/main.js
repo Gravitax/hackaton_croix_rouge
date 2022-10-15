@@ -2,44 +2,45 @@ import mab from "../mab_framework/mab.js";
 
 
 // =======================================================================
-
-/*
-	on associe les donnees recuperees de lapi a un template commun
-*/
-const	create_new_template = (data) => {
-	return (
-		{
-			"cp"			: data.cp,
-			"ville"			: data.ville,
-			"addr"			: data.addr,
-			"site"			: data.site,
-			"description"	: data.description,
-			"name"			: data.name,
-			"update"		: data.update,
-		}
-	);
-};
-
-// =======================================================================
 // RNA PART
+
+const	parse_data_rna = (asso_data, data_rna) => {
+	let	asso_rna = {};
+
+	data_rna.forEach(d => {
+		if (d.coordonnees && asso_data.cp == d.coordonnees.adresse_siege.code_postal)
+			asso_rna = d;
+	});
+	return ({
+		"cp"			: "",
+		"ville"			: "",
+		"addr"			: "",
+		"name"			: "",
+		"update"		: "",
+		"rna"			: asso_rna.rna,
+		"siren"			: asso_rna.siren
+	});
+};
 
 /*
 	on formate les info du flux rna au format de notre template
 */
 const	format_rna = async (asso_data) => {
-	let	data = {};
+	let	data_rna = {};
+
+	console.log("asso name : ", asso_data.name);
 
 	// GET
-	await fetch(`https://entreprise.data.gouv.fr/api/rna/v1/full_text/${asso_data.name}`, {
-		mode	: "no-cors"
-	})
-		.then((data) => data.text())
-		.then((data_text) => data = data_text)
+	await fetch(`https://www.data-asso.fr/gw/api-server/associations/name/${asso_data.name}`)
+		.then((data) => data.json())
+		.then((data_json) => {
+			data_rna = parse_data_rna(asso_data, data_json);
+		})
 		.catch((error) => console.log(`get rna error : ${error}`));
 
 	// il faut formater data afin quil remplisse le template
 	
-	return (data);
+	return (data_rna);
 };
 
 /*
@@ -49,19 +50,20 @@ const	get_rna_asso = async () => {
 	let	data = {};
 
 	// on loop sur toutes les asso soliguide et on recupere leurs data rna liees
-	for (let i = 0; i < window.soliguide_asso.length; i++) {
+	for (let i = 0; i < 10; i++) {
 		// on await format rna afin de rendre synchrone la variable data
 		data = await format_rna(window.soliguide_asso[i]);
 		// on cree et push le template
-		window.rna_asso.push(create_new_template({
-			"cp"			: data.cp,
-			"ville"			: data.ville,
-			"addr"			: data.addr,
-			"site"			: data.site,
-			"description"	: data.description,
-			"name"			: data.name,
-			"update"		: data.update,
-		}));
+		window.rna_asso.push(data);
+
+		// on push les asso qui ont un rna ou un siren
+		if (data.rna)
+			window.rna.push(data);
+	}
+
+	if (window.rna.length > 1) {
+		console.log("phase : get RNA gouv");
+		await get_rna_gouv();
 	}
 };
 
@@ -99,16 +101,14 @@ const	parse_soliguide = (flux) => {
 	// on loop sur le flux afin de remplir le template qui servira de comparatif avec les infos de lapi detat
 	for (let i = 0; i < flux.length; i++) {
 		asso = flux[i];
-		asso_data = create_new_template({
+		asso_data = {
 			"cp"			: asso.position.codePostal,
 			"ville"			: asso.position.ville,
 			"addr"			: asso.position.adresse,
-			"site"			: asso.entity.website,
-			"description"	: asso.description,
 			"name"			: asso.name,
 			"name_long"		: asso.entity.name,
 			"update"		: refaktor_update_value(asso.updatedAt),
-		});
+		};
 		window.soliguide_asso.push(asso_data);
 	}
 };
@@ -144,16 +144,47 @@ const	get_soliguide_asso = async () => {
 // =======================================================================
 
 /*
-	une fois les templates soliguide et rna crees il faut les comparer
+	on remplit les infos via lapi gouv
+*/
+const	get_rna_gouv = async () => {
+	for (let i = 0; i < window.rna.length; i++) {
+		await fetch(`https://entreprise.data.gouv.fr/api/rna/v1/id/${window.rna[i].rna}`)
+			.then((data) => data.json())
+			.then((data_json) => {
+				window.rna[i] = {
+					"cp"			: data_json.association.adresse_code_postal,
+					"ville"			: data_json.association.adresse_gestion_acheminement.toLowerCase(),
+					"addr"			: data_json.association.adresse_gestion_libelle_voie,
+					"name"			: data_json.association.titre_court,
+					"name_long"		: data_json.association.titre,
+					"update"		: data_json.association.derniere_maj,
+				};
+			})
+			.catch((error) => console.log(`get rna error : ${error}`));
+	}
+};
+
+// =======================================================================
+
+const	get_soliguide = (name) => {
+	for (let i = 0; i < window.soliguide_asso.length; i++) {
+		if (window.soliguide_asso[i].name.toLowerCase() == name.toLowerCase())
+			return (window.soliguide_asso[i]);
+	}
+};
+
+/*
+	une fois les templates soliguide et rna crees
+	il faut comparer les asso soliguide avec les asso window.rna (avec un id rna)
 */
 const	compare_soliguide_rna = () => {
 	let	soliguide, rna;
 
-	for (let i = 0; i < window.soliguide_asso.length; i++) {
-		soliguide = window.soliguide_asso[i];
-		rna = window.rna_asso[i];
+	for (let i = 0; i < window.rna.length; i++) {
+		rna = window.rna[i];
+		soliguide = get_soliguide(window.rna[i].name);
 
-		// console.log(soliguide, rna);
+		console.log(soliguide, rna);
 	}
 };
 
@@ -163,17 +194,18 @@ const	app = async () => {
 	// creating global arrays
 	window.soliguide_asso = [];
 	window.rna_asso = [];
+	window.rna = [];
 	// on recupere les asso soliguide templatees de facon propre
 	console.log("phase : get SOLIGUIDE asso");
 	await get_soliguide_asso();
-	console.log(window.soliguide_asso.length);
 	// on recupere les asso rna templatees de facon propre
 	console.log("phase : get RNA asso");
-	// await get_rna_asso();
-	// console.log(window.rna_asso.length);
+	await get_rna_asso();
+
+	console.log(window.rna);
 
 	console.log("phase : comparaison");
-	// compare_soliguide_rna();
+	compare_soliguide_rna();
 };
 
 // =======================================================================
