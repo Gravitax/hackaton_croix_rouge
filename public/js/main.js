@@ -34,7 +34,11 @@ const	format_rna = async (asso_data) => {
 		mode	: "no-cors"
 	})
 		.then((data) => data.text())
-		.then((data_text) => data = data_text);
+		.then((data_text) => data = data_text)
+		.catch((error) => console.log(`get rna error : ${error}`));
+
+	// il faut formater data afin quil remplisse le template
+	
 	return (data);
 };
 
@@ -44,8 +48,9 @@ const	format_rna = async (asso_data) => {
 const	get_rna_asso = async () => {
 	let	data = {};
 
+	// on loop sur toutes les asso soliguide et on recupere leurs data rna liees
 	for (let i = 0; i < window.soliguide_asso.length; i++) {
-		// on recupere les info de lasso sur le flux rna
+		// on await format rna afin de rendre synchrone la variable data
 		data = await format_rna(window.soliguide_asso[i]);
 		// on cree et push le template
 		window.rna_asso.push(create_new_template({
@@ -132,8 +137,8 @@ const	get_soliguide_asso = async () => {
 		body	: JSON.stringify(body_data),
 	})
 		.then((data) => data.json())
-		.then((data_text) => parse_soliguide(data_text))
-		.catch((error) => console.log(`error : ${error}`));
+		.then((data_json) => parse_soliguide(data_json))
+		.catch((error) => console.log(`get soliguide error : ${error}`));
 }
 
 // =======================================================================
@@ -158,17 +163,17 @@ const	app = async () => {
 	// creating global arrays
 	window.soliguide_asso = [];
 	window.rna_asso = [];
-	// on recupere les asso soliguide templatee de facon propre
+	// on recupere les asso soliguide templatees de facon propre
 	console.log("phase : get SOLIGUIDE asso");
 	await get_soliguide_asso();
 	console.log(window.soliguide_asso.length);
-	// on recupere les asso rna templatee de facon propre
+	// on recupere les asso rna templatees de facon propre
 	console.log("phase : get RNA asso");
 	// await get_rna_asso();
 	// console.log(window.rna_asso.length);
 
 	console.log("phase : comparaison");
-	compare_soliguide_rna();
+	// compare_soliguide_rna();
 };
 
 // =======================================================================
