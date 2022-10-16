@@ -28,8 +28,6 @@ const	parse_data_rna = (asso_data, data_rna) => {
 const	format_rna = async (asso_data) => {
 	let	data_rna = {};
 
-	console.log("asso name : ", asso_data.name);
-
 	// GET
 	await fetch(`https://www.data-asso.fr/gw/api-server/associations/name/${asso_data.name}`)
 		.then((data) => data.json())
@@ -183,8 +181,8 @@ const	get_rna_gouv = async () => {
 const	check_asso_exists = (asso_data) => {
 
 	for (let i = 0; i < window.soliguide_asso.length; i++) {
-		if (window.latest_asso[0].fields.titre === window.soliguide_asso[i].name
-				&& window.latest_asso[0].fields.departement_code === window.soliguide_asso[i].cp)
+		if (window.latest_asso[0][i].fields.titre === window.soliguide_asso[i].name
+				&& window.latest_asso[0][i].fields.departement_code === window.soliguide_asso[i].cp)
 			return (i);
 		return (-1)
 	}
@@ -198,19 +196,20 @@ const	parse_name_asso = async () => {
 		name_asso = window.latest_asso[i];
 		idx_asso = check_asso_exists();
 		if (idx_asso != -1)
-			return(window.latest_asso.slice(0, i))
+			window.latest_asso.slice(0, i)
+			return ;
 	}
 }
 
 const	get_latest_asso = async () => {
 
 	// GET
-	await fetch(`https://journal-officiel-datadila.opendatasoft.com/api/records/1.0/search/?dataset=jo_associations&q=&rows=1000&sort=dateparution&facet=source&facet=annonce_type_facette&facet=localisation_facette&facet=metadonnees_type_code&facet=lieu_declaration_facette&facet=domaine_activite_categorise&facet=domaine_activite_libelle_categorise&refine.domaine_activite_categorise=19000`, {
+	await fetch(`https://journal-officiel-datadila.opendatasoft.com/api/records/1.0/search/?dataset=jo_associations&q=&rows=10000&sort=dateparution&facet=source&facet=annonce_type_facette&facet=localisation_facette&facet=metadonnees_type_code&facet=lieu_declaration_facette&facet=domaine_activite_categorise&facet=domaine_activite_libelle_categorise&refine.domaine_activite_categorise=19000`, {
 		// await fetch(`https://entreprise.data.gouv.fr/api/rna/v1/full_text/${asso_data.name}`, {
 	})
 		.then((data) => data.json())
 		.then((data_text) => {
-			window.latest_asso.push(data_text.records[0]);
+			window.latest_asso.push(data_text.records);
 		})
 		.catch((error) => console.log(`get latest asso error : ${error}`));
 }
@@ -264,11 +263,7 @@ const	app = async () => {
 	// on recupere les asso rna templatees de facon propre
 	console.log("phase : get RNA asso");
 	await get_rna_asso();
-		
-	// on recupere les asso soliguide templatees de facon propre
-	console.log("phase : get SOLIGUIDE asso");
-	await get_soliguide_asso();
-	
+
 	console.log("phase : get NEW asso");
 	// on recupere les dernieres assos dans l'API JO
 	await get_latest_asso()
@@ -283,7 +278,6 @@ const	app = async () => {
 	// on envoit un mail pour les lister
 	send_email();
 
-	console.log(window.latest_asso);
 }
 
 // =======================================================================
