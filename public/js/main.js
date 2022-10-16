@@ -250,21 +250,18 @@ const	app = async () => {
 	await get_soliguide_asso();
 	console.log(window.soliguide_asso.length);
 	console.log(window.soliguide_asso[0]);
+	//affichage de la premiere soliguide_asso
 	display_card(window.soliguide_asso[window.asso_index]);
 	next_button.style.display = "block";
-	//affichage de la premiere soliguide_asso
-	// for(let i = 0; i < window.soliguide_asso.length; i++)
-	// {
-	// 	display_card(window.soliguide_asso[i]);
-	// }
+
 	// on recupere les asso rna templatees de facon propre
 	console.log("phase : get RNA asso");
 	await get_rna_asso();
 
 	console.log(window.rna);
 
-	// console.log("phase : comparaison");
-	// compare_soliguide_rna();
+	console.log("phase : comparaison");
+	compare_soliguide_rna();
 };
 
 // =======================================================================
@@ -282,6 +279,5 @@ mab(document).ready(() => {
 	load_button.addEventListener("click", app);
 	next_button.addEventListener("click", display_next);
 	//app();
-
 
 });
