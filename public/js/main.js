@@ -35,9 +35,9 @@ const	format_rna = async (asso_data) => {
 			data_rna = parse_data_rna(asso_data, data_json);
 		})
 		.catch((error) => console.log(`get rna error : ${error}`));
-	 
+
 	// il faut formater data afin quil remplisse le template
-	
+
 	return (data_rna);
 };
 
@@ -91,7 +91,7 @@ const	refaktor_postal_code = (value) => {
 	if (!value || value.length < 1)
 		return ("");
 	let new_postal_code
-	
+
 	new_postal_code = value.substr(0, 2)
 	return (new_postal_code);
 };
@@ -109,12 +109,14 @@ const	parse_soliguide = (flux) => {
 	for (let i = 0; i < flux.length; i++) {
 		asso = flux[i];
 		asso_data = {
-			"cp"			: refaktor_postal_code(asso.position.codePostal),
+			"cp"			: asso.position.codePostal,
 			"ville"			: asso.position.ville,
 			"addr"			: asso.position.adresse,
 			"site"			: asso.entity.website,
 			"description"	: asso.description,
 			"name"			: asso.name,
+			"description"	: asso.description,
+			"site"			: asso.entity.website,
 			"name_long"		: asso.entity.name,
 			"update"		: refaktor_update_value(asso.updatedAt),
 		};
@@ -182,7 +184,7 @@ const	check_asso_exists = (asso_data) => {
 
 	for (let i = 0; i < window.soliguide_asso.length; i++) {
 		if (window.latest_asso[0][i].fields.titre === window.soliguide_asso[i].name
-				&& window.latest_asso[0][i].fields.departement_code === window.soliguide_asso[i].cp)
+				&& window.latest_asso[0][i].fields.departement_code === window.soliguide_asso[i].cp.substr(0, 2))
 			return (i);
 		return (-1)
 	}
@@ -232,34 +234,72 @@ const	compare_soliguide_rna = () => {
 // ========================================================================
 
 const	send_email = () => {
-	// window.emailjs.sendForm("contact_service", "contact_form", document.getElementById("contact-form"));
-
 	const	template_params = {
 		"from_name"	: "maboye",
 		"to_name"	: "hackaton",
-		"message"	: "ceci est mon message custom"
+		"message"	: "ceci est mon message custom car on ne peut rien faire dautre"
 	};
-	 
-	// emailjs.send("service_yobn9ho", "template_gfxybxf", template_params)
-	// 	.then((response) => {
-	// 		console.log("SUCCESS!", response.status, response.text);
-	// 	}, (error) => {
-	// 		console.log("FAILED...", error);
-	// 	});
+
+	emailjs.send("service_yobn9ho", "template_gfxybxf", template_params)
+		.then((response) => {
+			console.log("MAIL SENT SUCCESS!", response.status, response.text);
+		}, (error) => {
+			console.log("MAIL SENT FAILED...", error);
+		});
 };
 
 // =======================================================================
 
+let		display_card = (asso) => {
+
+	let	box = document.getElementById("box");
+	//let card = document.querySelector("div.card") ? document.querySelector("div.card") : document.createElement("div");
+	let card = document.createElement("div");
+	box.innerHTML = "";
+	card.classList.add("card", "m-3");
+	card.style.width = "35%";
+	card.innerHTML ='<div class="card-header">' + '<h5>' + asso.name + '</h5>' + '</div>' +
+					'<ul class="list-group list-group-flush">'  +
+					'<li class="list-group-item">'+ '<b>Code postal</b> ' + asso.cp + '</li>'  +
+					'<li class="list-group-item">'+ '<b>Ville</b> ' + asso.ville + '</li>'  +
+					'<li class="list-group-item">'+ '<b>Adresse</b> ' + asso.addr + '</li>'  +
+					'<li class="list-group-item">'+ '<b>Description</b> ' + asso.description + '</li>'  +
+					'<li class="list-group-item">'+ '<b>Derniere maj</b> ' + asso.update + '</li>'  +
+					'<li class="list-group-item">'+ '<b>Site web</b> ' + asso.site + '</li>'  +
+  					'</ul>';
+	box.appendChild(card);
+};
+
+// =======================================================================
+
+let		display_next = () => {
+	window.asso_index += 1;
+	display_card(window.soliguide_asso[window.asso_index]);
+}
+
+// =======================================================================
+
 const	app = async () => {
+
+	let	next_button = document.getElementById("next");
+	let	compare_button = document.getElementById("compare");
 	// creating global arrays
 	window.soliguide_asso = [];
 	window.rna_asso = [];
 	window.rna = [];
 	window.latest_asso = [];
 
+	window.asso_index = 0;
 	// on recupere les asso soliguide templatees de facon propre
 	console.log("phase : get SOLIGUIDE asso");
 	await get_soliguide_asso();
+	console.log(window.soliguide_asso.length);
+	console.log(window.soliguide_asso[0]);
+	//affichage de la premiere soliguide_asso
+	display_card(window.soliguide_asso[window.asso_index]);
+	next_button.style.display = "block";
+	compare_button.style.display = "block";
+
 	// on recupere les asso rna templatees de facon propre
 	console.log("phase : get RNA asso");
 	await get_rna_asso();
@@ -273,11 +313,81 @@ const	app = async () => {
 	// on compare les templates soliguide et rna afin de check si il y a eu une modification
 	console.log("phase : comparaison");
 	compare_soliguide_rna();
+}
 
-	// on check les derniers ajouts dasso aux api gouv
-	// on envoit un mail pour les lister
-	send_email();
+// =======================================================================
 
+let		get_info_asso = async (rna) => {
+
+	let info_asso = {};
+
+	await fetch(`https://entreprise.data.gouv.fr/api/rna/v1/id/${rna}`)
+		.then((data) => data.json())
+		.then((data_json) => {
+			info_asso = {
+				"cp"			: data_json.association.adresse_code_postal,
+				"ville"			: data_json.association.adresse_gestion_acheminement.toLowerCase(),
+				"addr"			: data_json.association.adresse_gestion_libelle_voie,
+				"name"			: data_json.association.titre_court,
+				"name_long"		: data_json.association.titre,
+				"update"		: data_json.association.derniere_maj,
+			};
+		})
+		.catch((error) => console.log(`get rna error : ${error}`));
+	return (info_asso);
+}
+// =======================================================================
+
+let		display_both_cards = (asso_soliguide, asso_gouv) => {
+
+	let	box = document.getElementById("box");
+	//let card = document.querySelector("div.card") ? document.querySelector("div.card") : document.createElement("div");
+	let card = document.createElement("div");
+	box.innerHTML = "";
+	card.classList.add("card", "m-3");
+	card.style.width = "35%";
+	card.innerHTML ='<div class="card-header">' + '<h5>' + asso_soliguide.name + '</h5>' + '</div>' +
+					'<ul class="list-group list-group-flush">'  +
+					'<li class="list-group-item">'+ '<b>Code postal</b> ' + asso_soliguide.cp + '</li>'  +
+					'<li class="list-group-item">'+ '<b>Ville</b> ' + asso_soliguide.ville + '</li>'  +
+					'<li class="list-group-item">'+ '<b>Adresse</b> ' + asso_soliguide.addr + '</li>'  +
+					'<li class="list-group-item">'+ '<b>Description</b> ' + asso_soliguide.description + '</li>'  +
+					'<li class="list-group-item">'+ '<b>Derniere maj</b> ' + asso_soliguide.update + '</li>'  +
+					'<li class="list-group-item">'+ '<b>Site web</b> ' + asso_soliguide.site + '</li>'  +
+  					'</ul>';
+	box.appendChild(card);
+	let card2 = document.createElement("div");
+	card2.classList.add("card", "m-3");
+	card2.style.width = "35%";
+	card2.innerHTML ='<div class="card-header">' + '<h5>' + asso_gouv.name + '</h5>' + '</div>' +
+					'<ul class="list-group list-group-flush">'  +
+					'<li class="list-group-item">'+ '<b>Code postal</b> ' + asso_gouv.cp + '</li>'  +
+					'<li class="list-group-item">'+ '<b>Ville</b> ' + asso_gouv.ville + '</li>'  +
+					'<li class="list-group-item">'+ '<b>Adresse</b> ' + asso_gouv.addr + '</li>'  +
+					'<li class="list-group-item">'+ '<b>Description</b> ' + asso_gouv.description + '</li>'  +
+					'<li class="list-group-item">'+ '<b>Derniere maj</b> ' + asso_gouv.update + '</li>'  +
+					'<li class="list-group-item">'+ '<b>Site web</b> ' + asso_gouv.site + '</li>'  +
+  					'</ul>';
+	box.appendChild(card2);
+};
+
+// =======================================================================
+
+let		get_rna_single_asso = async () => {
+
+	let		data_rna = {};
+	let		info_asso = {};
+
+	console.log("event : get RNA single asso");
+	data_rna = await format_rna(window.soliguide_asso[window.asso_index]);
+	console.log(data_rna);
+	console.log("event : get info asso if RNA");
+	if (data_rna.rna)
+	{
+		info_asso = await get_info_asso(data_rna.rna);
+		console.log(info_asso);
+		display_both_cards(window.soliguide_asso[window.asso_index], info_asso);
+	}
 }
 
 // =======================================================================
@@ -286,14 +396,23 @@ mab.init();
 
 mab(document).ready(async () => {
 
+	let load_button = document.getElementById("load");
+	let	next_button = document.getElementById("next");
+	let	compare_button = document.getElementById("compare");
+	let	btn_email = document.getElementById("btn_email");
+
 	console.log("phase : HTML is ready");
 
-	// 1 - on recupere toutes les asso soliguide celon un template de donnees propre
-	// 2 - pareil avec rna
-	// 3 - on compare les deux rendu
+	load_button.addEventListener("click", app);
+	next_button.addEventListener("click", display_next);
+	compare_button.addEventListener("click", get_rna_single_asso);
 
-	console.log("phase : START app");
-	await app();
-	console.log("phase : END app");
+	if (btn_email) {
+		btn_email.addEventListener("click", (e) => {
+			e.preventDefault();
+
+			send_email();
+		});
+	}
 
 });
