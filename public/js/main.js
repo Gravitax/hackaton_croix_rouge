@@ -317,6 +317,7 @@ let		get_info_asso = async (rna) => {
 	await fetch(`https://entreprise.data.gouv.fr/api/rna/v1/id/${rna}`)
 		.then((data) => data.json())
 		.then((data_json) => {
+			console.log(data_json);
 			info_asso = {
 				"rna"			: rna,
 				"cp"			: data_json.association.adresse_code_postal,
@@ -324,6 +325,8 @@ let		get_info_asso = async (rna) => {
 				"addr"			: data_json.association.adresse_gestion_libelle_voie,
 				"name"			: data_json.association.titre_court,
 				"name_long"		: data_json.association.titre,
+				"description"	: data_json.association.objet,
+				"site"			: data_json.association.site_web,
 				"update"		: data_json.association.derniere_maj,
 			};
 		})
