@@ -160,14 +160,52 @@ const	compare_soliguide_rna = () => {
 
 // =======================================================================
 
+let		display_card = (asso) => {
+
+	let card = document.querySelector("div.card") ? document.querySelector("div.card") : document.createElement("div");
+	card.innerHTML = "";
+	card.classList.add("card", "m-3");
+	card.style.width = "35%";
+	card.innerHTML ='<div class="card-header">' + asso.name + '</div>' +
+					'<ul class="list-group list-group-flush">'  +
+					'<li class="list-group-item">'+ asso.cp + '</li>'  +
+					'<li class="list-group-item">'+ asso.ville + '</li>'  +
+					'<li class="list-group-item">'+ asso.addr + '</li>'  +
+					'<li class="list-group-item">'+ asso.description + '</li>'  +
+					'<li class="list-group-item">'+ asso.update + '</li>'  +
+					'<li class="list-group-item">'+ asso.site + '</li>'  +
+  					'</ul>';
+	document.body.append(card);
+};
+
+// =======================================================================
+
+let		display_next = () => {
+	window.asso_index += 1;
+	display_card(window.soliguide_asso[window.asso_index]);
+}
+
+// =======================================================================
+
 const	app = async () => {
+
+	let	next_button = document.getElementById("next");
 	// creating global arrays
 	window.soliguide_asso = [];
 	window.rna_asso = [];
+	window.asso_index = 0;
 	// on recupere les asso soliguide templatees de facon propre
 	console.log("phase : get SOLIGUIDE asso");
 	await get_soliguide_asso();
 	console.log(window.soliguide_asso.length);
+	console.log(window.soliguide_asso[0]);
+	display_card(window.soliguide_asso[window.asso_index]);
+	next_button.style.display = "block";
+	//affichage de la premiere soliguide_asso
+	// for(let i = 0; i < window.soliguide_asso.length; i++)
+	// {
+	// 	display_card(window.soliguide_asso[i]);
+	// }
 	// on recupere les asso rna templatees de facon propre
 	console.log("phase : get RNA asso");
 	// await get_rna_asso();
@@ -183,9 +221,15 @@ mab.init();
 
 mab(document).ready(() => {
 
+	let load_button = document.getElementById("load");
+	let	next_button = document.getElementById("next");
+
 	console.log("phase : HTML is ready");
 
 	console.log("phase : start app");
-	app();
+	load_button.addEventListener("click", app);
+	next_button.addEventListener("click", display_next);
+	//app();
+
 
 });
