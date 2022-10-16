@@ -50,7 +50,7 @@ const	get_rna_asso = async () => {
 	let	data = {};
 
 	// on loop sur toutes les asso soliguide et on recupere leurs data rna liees
-	for (let i = 0; i < 10; i++) {
+	for (let i = 0; i < 1; i++) {
 		// on await format rna afin de rendre synchrone la variable data
 		data = await format_rna(window.soliguide_asso[i]);
 		// on cree et push le template
@@ -166,13 +166,6 @@ const	get_rna_gouv = async () => {
 
 // =======================================================================
 
-const	get_soliguide = (name) => {
-	for (let i = 0; i < window.soliguide_asso.length; i++) {
-		if (window.soliguide_asso[i].name.toLowerCase() == name.toLowerCase())
-			return (window.soliguide_asso[i]);
-	}
-};
-
 /*
 	une fois les templates soliguide et rna crees
 	il faut comparer les asso soliguide avec les asso window.rna (avec un id rna)
@@ -182,10 +175,27 @@ const	compare_soliguide_rna = () => {
 
 	for (let i = 0; i < window.rna.length; i++) {
 		rna = window.rna[i];
-		soliguide = get_soliguide(window.rna[i].name);
-
-		console.log(soliguide, rna);
+		// console.log(rna);
 	}
+};
+
+// =======================================================================
+
+const	send_email = () => {
+	// window.emailjs.sendForm("contact_service", "contact_form", document.getElementById("contact-form"));
+
+	const	template_params = {
+		"from_name"	: "maboye",
+		"to_name"	: "hackaton",
+		"message"	: "ceci est mon message custom"
+	};
+	 
+	// emailjs.send("service_yobn9ho", "template_gfxybxf", template_params)
+	// 	.then((response) => {
+	// 		console.log("SUCCESS!", response.status, response.text);
+	// 	}, (error) => {
+	// 		console.log("FAILED...", error);
+	// 	});
 };
 
 // =======================================================================
@@ -202,17 +212,20 @@ const	app = async () => {
 	console.log("phase : get RNA asso");
 	await get_rna_asso();
 
-	console.log(window.rna);
-
+	// on compare les templates soliguide et rna afin de check si il y a eu une modification
 	console.log("phase : comparaison");
 	compare_soliguide_rna();
+
+	// on check les derniers ajouts dasso aux api gouv
+	// on envoit un mail pour les lister
+	send_email();
 };
 
 // =======================================================================
 
 mab.init();
 
-mab(document).ready(() => {
+mab(document).ready(async () => {
 
 	console.log("phase : HTML is ready");
 
@@ -220,7 +233,8 @@ mab(document).ready(() => {
 	// 2 - pareil avec rna
 	// 3 - on compare les deux rendu
 
-	console.log("phase : start app");
-	app();
+	console.log("phase : START app");
+	await app();
+	console.log("phase : END app");
 
 });
