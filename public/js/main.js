@@ -287,7 +287,6 @@ const	app = async () => {
 	window.soliguide_asso = [];
 	window.rna_asso = [];
 	window.rna = [];
-	window.latest_asso = [];
 
 	window.asso_index = 0;
 	// on recupere les asso soliguide templatees de facon propre
@@ -303,12 +302,6 @@ const	app = async () => {
 	// on recupere les asso rna templatees de facon propre
 	console.log("phase : get RNA asso");
 	await get_rna_asso();
-
-	console.log("phase : get NEW asso");
-	// on recupere les dernieres assos dans l'API JO
-	await get_latest_asso()
-	// on compare les 2 BDD
-	await parse_name_asso()
 
 	// on compare les templates soliguide et rna afin de check si il y a eu une modification
 	console.log("phase : comparaison");
@@ -408,8 +401,32 @@ mab(document).ready(async () => {
 	compare_button.addEventListener("click", get_rna_single_asso);
 
 	if (btn_email) {
-		btn_email.addEventListener("click", (e) => {
+		btn_email.addEventListener("click", async (e) => {
 			e.preventDefault();
+
+			if (!window.soliguide_asso || window.soliguide_asso.length < 1) {
+				await app();
+			}
+
+			window.latest_asso = [];
+
+			console.log("phase : get NEW asso");
+			// on recupere les dernieres assos dans l'API JO
+			await get_latest_asso();
+			// on compare les 2 BDD
+			await parse_name_asso();
+
+			console.log(window.latest_asso);
+
+			if (window.latest_asso) {
+				console.log("there is some new asso");
+				let	tmp = document.getElementById("email_result");
+
+				if (tmp) {
+					console.log("append to tmp");
+					tmp.innerHTML += `${window.latest_asso[0].length} new assos detected<br />`;
+				}
+			}
 
 			send_email();
 		});
