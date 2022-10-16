@@ -318,6 +318,7 @@ let		get_info_asso = async (rna) => {
 		.then((data) => data.json())
 		.then((data_json) => {
 			info_asso = {
+				"rna"			: rna,
 				"cp"			: data_json.association.adresse_code_postal,
 				"ville"			: data_json.association.adresse_gestion_acheminement.toLowerCase(),
 				"addr"			: data_json.association.adresse_gestion_libelle_voie,
@@ -354,6 +355,7 @@ let		display_both_cards = (asso_soliguide, asso_gouv) => {
 	card2.style.width = "35%";
 	card2.innerHTML ='<div class="card-header">' + '<h5>' + asso_gouv.name + '</h5>' + '</div>' +
 					'<ul class="list-group list-group-flush">'  +
+					'<li class="list-group-item">'+ '<b>Num RNA</b> ' + asso_gouv.rna + '</li>'  +
 					'<li class="list-group-item">'+ '<b>Code postal</b> ' + asso_gouv.cp + '</li>'  +
 					'<li class="list-group-item">'+ '<b>Ville</b> ' + asso_gouv.ville + '</li>'  +
 					'<li class="list-group-item">'+ '<b>Adresse</b> ' + asso_gouv.addr + '</li>'  +
