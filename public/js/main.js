@@ -126,6 +126,8 @@ const	parse_soliguide = (flux) => {
 			"ville"			: asso.position.ville,
 			"addr"			: asso.position.adresse,
 			"name"			: asso.name,
+			"description"	: asso.description,
+			"site"			: asso.entity.website,
 			"name_long"		: asso.entity.name,
 			"update"		: refaktor_update_value(asso.updatedAt),
 		};
@@ -212,20 +214,22 @@ const	compare_soliguide_rna = () => {
 
 let		display_card = (asso) => {
 
-	let card = document.querySelector("div.card") ? document.querySelector("div.card") : document.createElement("div");
-	card.innerHTML = "";
+	let	box = document.getElementById("box");
+	//let card = document.querySelector("div.card") ? document.querySelector("div.card") : document.createElement("div");
+	let card = document.createElement("div");
+	box.innerHTML = "";
 	card.classList.add("card", "m-3");
 	card.style.width = "35%";
-	card.innerHTML ='<div class="card-header">' + asso.name + '</div>' +
+	card.innerHTML ='<div class="card-header">' + '<h5>' + asso.name + '</h5>' + '</div>' +
 					'<ul class="list-group list-group-flush">'  +
-					'<li class="list-group-item">'+ asso.cp + '</li>'  +
-					'<li class="list-group-item">'+ asso.ville + '</li>'  +
-					'<li class="list-group-item">'+ asso.addr + '</li>'  +
-					'<li class="list-group-item">'+ asso.description + '</li>'  +
-					'<li class="list-group-item">'+ asso.update + '</li>'  +
-					'<li class="list-group-item">'+ asso.site + '</li>'  +
+					'<li class="list-group-item">'+ '<b>Code postal</b> ' + asso.cp + '</li>'  +
+					'<li class="list-group-item">'+ '<b>Ville</b> ' + asso.ville + '</li>'  +
+					'<li class="list-group-item">'+ '<b>Adresse</b> ' + asso.addr + '</li>'  +
+					'<li class="list-group-item">'+ '<b>Description</b> ' + asso.description + '</li>'  +
+					'<li class="list-group-item">'+ '<b>Derniere maj</b> ' + asso.update + '</li>'  +
+					'<li class="list-group-item">'+ '<b>Site web</b> ' + asso.site + '</li>'  +
   					'</ul>';
-	document.body.append(card);
+	box.appendChild(card);
 };
 
 // =======================================================================
@@ -240,6 +244,7 @@ let		display_next = () => {
 const	app = async () => {
 
 	let	next_button = document.getElementById("next");
+	let	compare_button = document.getElementById("compare");
 	// creating global arrays
 	window.soliguide_asso = [];
 	window.rna_asso = [];
@@ -253,6 +258,7 @@ const	app = async () => {
 	//affichage de la premiere soliguide_asso
 	display_card(window.soliguide_asso[window.asso_index]);
 	next_button.style.display = "block";
+	compare_button.style.display = "block";
 
 	// on recupere les asso rna templatees de facon propre
 	console.log("phase : get RNA asso");
@@ -266,18 +272,95 @@ const	app = async () => {
 
 // =======================================================================
 
+let		get_info_asso = async (rna) => {
+
+	let info_asso = {};
+
+	await fetch(`https://entreprise.data.gouv.fr/api/rna/v1/id/${rna}`)
+		.then((data) => data.json())
+		.then((data_json) => {
+			info_asso = {
+				"cp"			: data_json.association.adresse_code_postal,
+				"ville"			: data_json.association.adresse_gestion_acheminement.toLowerCase(),
+				"addr"			: data_json.association.adresse_gestion_libelle_voie,
+				"name"			: data_json.association.titre_court,
+				"name_long"		: data_json.association.titre,
+				"update"		: data_json.association.derniere_maj,
+			};
+		})
+		.catch((error) => console.log(`get rna error : ${error}`));
+	return (info_asso);
+}
+// =======================================================================
+
+let		display_both_cards = (asso_soliguide, asso_gouv) => {
+
+	let	box = document.getElementById("box");
+	//let card = document.querySelector("div.card") ? document.querySelector("div.card") : document.createElement("div");
+	let card = document.createElement("div");
+	box.innerHTML = "";
+	card.classList.add("card", "m-3");
+	card.style.width = "35%";
+	card.innerHTML ='<div class="card-header">' + '<h5>' + asso_soliguide.name + '</h5>' + '</div>' +
+					'<ul class="list-group list-group-flush">'  +
+					'<li class="list-group-item">'+ '<b>Code postal</b> ' + asso_soliguide.cp + '</li>'  +
+					'<li class="list-group-item">'+ '<b>Ville</b> ' + asso_soliguide.ville + '</li>'  +
+					'<li class="list-group-item">'+ '<b>Adresse</b> ' + asso_soliguide.addr + '</li>'  +
+					'<li class="list-group-item">'+ '<b>Description</b> ' + asso_soliguide.description + '</li>'  +
+					'<li class="list-group-item">'+ '<b>Derniere maj</b> ' + asso_soliguide.update + '</li>'  +
+					'<li class="list-group-item">'+ '<b>Site web</b> ' + asso_soliguide.site + '</li>'  +
+  					'</ul>';
+	box.appendChild(card);
+	let card2 = document.createElement("div");
+	card2.classList.add("card", "m-3");
+	card2.style.width = "35%";
+	card2.innerHTML ='<div class="card-header">' + '<h5>' + asso_gouv.name + '</h5>' + '</div>' +
+					'<ul class="list-group list-group-flush">'  +
+					'<li class="list-group-item">'+ '<b>Code postal</b> ' + asso_gouv.cp + '</li>'  +
+					'<li class="list-group-item">'+ '<b>Ville</b> ' + asso_gouv.ville + '</li>'  +
+					'<li class="list-group-item">'+ '<b>Adresse</b> ' + asso_gouv.addr + '</li>'  +
+					'<li class="list-group-item">'+ '<b>Description</b> ' + asso_gouv.description + '</li>'  +
+					'<li class="list-group-item">'+ '<b>Derniere maj</b> ' + asso_gouv.update + '</li>'  +
+					'<li class="list-group-item">'+ '<b>Site web</b> ' + asso_gouv.site + '</li>'  +
+  					'</ul>';
+	box.appendChild(card2);
+};
+
+// =======================================================================
+
+let		get_rna_single_asso = async () => {
+
+	let		data_rna = {};
+	let		info_asso = {};
+
+	console.log("event : get RNA single asso");
+	data_rna = await format_rna(window.soliguide_asso[window.asso_index]);
+	console.log(data_rna);
+	console.log("event : get info asso if RNA");
+	if (data_rna.rna)
+	{
+		info_asso = await get_info_asso(data_rna.rna);
+		console.log(info_asso);
+		display_both_cards(window.soliguide_asso[window.asso_index], info_asso);
+	}
+}
+
+// =======================================================================
+
 mab.init();
 
 mab(document).ready(() => {
 
 	let load_button = document.getElementById("load");
 	let	next_button = document.getElementById("next");
+	let	compare_button = document.getElementById("compare");
 
 	console.log("phase : HTML is ready");
 
 	console.log("phase : start app");
 	load_button.addEventListener("click", app);
 	next_button.addEventListener("click", display_next);
+	compare_button.addEventListener("click", get_rna_single_asso);
 	//app();
 
 });
