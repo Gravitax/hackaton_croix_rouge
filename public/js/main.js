@@ -10,12 +10,12 @@ const	create_new_template = (data) => {
 	return (
 		{
 			"cp"			: data.cp,
-			"ville"			: data.ville,
-			"addr"			: data.addr,
-			"site"			: data.site,
-			"description"	: data.description,
+			// "ville"			: data.ville,
+			// "addr"			: data.addr,
+			// "site"			: data.site,
+			// "description"	: data.description,
 			"name"			: data.name,
-			"update"		: data.update,
+			// "update"		: data.update,
 		}
 	);
 };
@@ -96,6 +96,15 @@ const	refaktor_update_value = (value) => {
 	return (new_date);
 };
 
+const	refaktor_postal_code = (value) => {
+	if (!value || value.length < 1)
+		return ("");
+	let new_postal_code
+	
+	new_postal_code = value.substr(0, 2)
+	return (new_postal_code);
+};
+
 const	parse_soliguide = (flux) => {
 
 	if (!flux || !flux.places)
@@ -109,14 +118,14 @@ const	parse_soliguide = (flux) => {
 	for (let i = 0; i < flux.length; i++) {
 		asso = flux[i];
 		asso_data = create_new_template({
-			"cp"			: asso.position.codePostal,
-			"ville"			: asso.position.ville,
-			"addr"			: asso.position.adresse,
-			"site"			: asso.entity.website,
-			"description"	: asso.description,
+			"cp"			: refaktor_postal_code(asso.position.codePostal),
+			// "ville"			: asso.position.ville,
+			// "addr"			: asso.position.adresse,
+			// "site"			: asso.entity.website,
+			// "description"	: asso.description,
 			"name"			: asso.name,
-			"name_long"		: asso.entity.name,
-			"update"		: refaktor_update_value(asso.updatedAt),
+			// "name_long"		: asso.entity.name,
+			// "update"		: refaktor_update_value(asso.updatedAt),
 		});
 		window.soliguide_asso.push(asso_data);
 	}
@@ -166,22 +175,95 @@ const	compare_soliguide_rna = () => {
 	}
 };
 
-// =======================================================================
 
-const	app = async () => {
-	// creating global arrays
-	window.soliguide_asso = [];
-	window.rna_asso = [];
-	// on recupere les asso soliguide templatees de facon propre
-	console.log("phase : get SOLIGUIDE asso");
-	await get_soliguide_asso();
-	console.log(window.soliguide_asso.length);
-	// on recupere les asso rna templatees de facon propre
-	console.log("phase : get RNA asso");
-	await get_rna_asso();
-	console.log(window.rna_asso.length);
+// ========================================================================
 
-	console.log("phase : comparaison");
+/*
+	On check si l'asso existe dans la BDD de Soliguide
+*/
+const	check_asso_exists = (asso_data) => {
+
+	// console.log("check_asso_exist", window.latest_asso);
+	for (let i = 0; i < window.soliguide_asso.length; i++) {
+		if (window.latest_asso[0].fields.titre === window.soliguide_asso[i].name && window.latest_asso[0].fields.departement_code === window.soliguide_asso[i].cp)
+			return (i);
+	return (-1)
+	}
+}
+
+
+
+// ========================================================================
+
+
+
+// ========================================================================
+
+const parse_name_asso = async () => {
+	let name_asso;
+	let	idx_asso;
+
+	// console.log("parse_name_asso", window.latest_asso[0])
+	for(let i = 0; i < 1000; i++) {
+		name_asso = window.latest_asso[i];
+		idx_asso = check_asso_exists();
+		if (idx_asso != -1)
+			return(window.latest_asso.slice(0, i))
+	}
+}
+
+// ========================================================================
+
+const	get_latest_asso = async () => {
+
+	// GET
+	await fetch(`https://journal-officiel-datadila.opendatasoft.com/api/records/1.0/search/?dataset=jo_associations&q=&rows=1000&sort=dateparution&facet=source&facet=annonce_type_facette&facet=localisation_facette&facet=metadonnees_type_code&facet=lieu_declaration_facette&facet=domaine_activite_categorise&facet=domaine_activite_libelle_categorise&refine.domaine_activite_categorise=19000`, {
+		// await fetch(`https://entreprise.data.gouv.fr/api/rna/v1/full_text/${asso_data.name}`, {
+	})
+		.then((data) => data.json())
+		.then((data_text) => {
+			window.latest_asso.push(data_text.records[0])
+			return (data_text)
+		})
+		.catch((error) => console.log(`get latest asso error : ${error}`));
+		// .then((data) => data.json())
+		// .then((data_text) => parse_soliguide(data_text))
+		// .then((data) => data.text())
+		// .then((data_text) => console.log(data_text));
+		
+	}
+	
+	// =======================================================================
+	
+	const	app = async () => {
+
+		// creating global arrays
+		window.soliguide_asso = [];
+		window.rna_asso = [];
+		window.latest_asso = [];
+
+		
+		// on recupere les asso soliguide templatees de facon propre
+		console.log("phase : get SOLIGUIDE asso");
+		await get_soliguide_asso();
+		
+		// // on recupere les dernieres assos dans l'API JO
+		await get_latest_asso()
+		// console.log("in app", window.latest_asso)
+
+		// // on compare les 2 BDD
+		await parse_name_asso()
+
+		console.log(window.latest_asso)
+		
+	// console.log(window.soliguide_asso.length);
+	// // on recupere les asso rna templatees de facon propre
+	// console.log("phase : get RNA asso");
+	// await get_rna_asso();
+	// console.log(window.rna_asso.length);
+
+	// console.log("phase : comparaison");
+	console.log("done");
 	// compare_soliguide_rna();
 };
 
